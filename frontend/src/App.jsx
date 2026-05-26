@@ -49,7 +49,7 @@ function App() {
     let aiIsFake = false;
     
     try {
-      const response = await fetch('https://fake-news-detector-w1gx.onrender.com', {
+      const response = await fetch('https://fake-news-detector-w1gx.onrender.com/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: inputText }), 

@@ -36,7 +36,7 @@ function App() {
 
   useEffect(() => {
     fetchHistory();
-    fetchMetrics(); // เรียกใช้ตอนโหลดหน้าเว็บ
+    fetchMetrics();  // เรียกใช้ตอนโหลดหน้าเว็บ
   }, []);
 
   const handleScan = async () => {

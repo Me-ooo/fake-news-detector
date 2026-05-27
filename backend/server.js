@@ -12,7 +12,7 @@ app.post('/api/scan', (req, res) => {
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'กรุณาส่งข้อความมาด้วยครับ' });
 
-    const pythonProcess = spawn('python', ['predict.py', text]);
+    const pythonProcess = spawn('python3', ['predict.py', text]);
     let outputData = '';
 
     pythonProcess.stdout.on('data', (data) => { outputData += data.toString(); });

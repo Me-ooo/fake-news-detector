@@ -17,8 +17,8 @@ def main():
 
         # 3. โหลดสมองกล (ไฟล์ .pkl) ที่เราเทรนไว้แล้ว
         # ⚠️ หมายเหตุ: ตรวจสอบ Path ให้ตรงกับที่คุณเอฟเก็บไฟล์ไว้
-        model = joblib.load('fake_news_rf_model.pkl')
-        vectorizer = joblib.load('tfidf_vectorizer.pkl')
+        model = joblib.load('models/fake_news_rf_model.pkl')
+        vectorizer = joblib.load('models/tfidf_vectorizer.pkl')
 
         # 4. แปลงข้อความและให้ AI ทำนายผล
         X_new = vectorizer.transform([input_text])

@@ -1,48 +1,49 @@
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-import joblib
 import sys
-
-# 🌟 นำเข้าไลบรารีตัดคำภาษาไทย
+import json
+import joblib
 from pythainlp.tokenize import word_tokenize
 
-print("🚀 กำลังเริ่มต้นกระบวนการสร้างสมองกล AI (รองรับภาษาไทย)...")
-
-try:
-    df = pd.read_csv('news_dataset.csv')
-    print(f"📊 โหลดข้อมูลสำเร็จ! จำนวนข่าวทั้งหมด: {len(df)} ข่าว")
-except FileNotFoundError:
-    print("❌ ไม่พบไฟล์ 'news_dataset.csv' ครับ!")
-    sys.exit()
-
-df = df.dropna(subset=['text', 'label'])
-
-# 🌟 ฟังก์ชันพิเศษสำหรับตัดคำภาษาไทยโดยเฉพาะ
+# 1. ฟังก์ชันตัดคำ (ต้องมี เพราะตอนเทรนเราใช้ตัวนี้)
 def thai_tokenizer(text):
-    # ใช้ engine 'newmm' ซึ่งเป็นมาตรฐานที่แม่นยำและทำงานเร็วที่สุด
     return word_tokenize(text, engine='newmm', keep_whitespace=False)
 
-print("⏳ กำลังเรียนรู้และตัดคำภาษาไทย (ขั้นตอนนี้อาจใช้เวลาหลายนาที หากข้อมูลมีขนาดใหญ่)...")
+def main():
+    try:
+        # 2. รับข้อความที่หน้าเว็บ (React) ส่งมาผ่าน server.js
+        if len(sys.argv) < 2:
+            raise ValueError("ไม่มีข้อความส่งมาให้ AI วิเคราะห์")
+        
+        input_text = sys.argv[1]
 
-# ส่งฟังก์ชัน thai_tokenizer เข้าไปให้ TfidfVectorizer ใช้งาน
-vectorizer = TfidfVectorizer(tokenizer=thai_tokenizer, max_features=5000) 
-X = vectorizer.fit_transform(df['text'])
-y = df['label']
+        # 3. โหลดสมองกล (ไฟล์ .pkl) ที่เราเทรนไว้แล้ว
+        # ⚠️ หมายเหตุ: ตรวจสอบ Path ให้ตรงกับที่คุณเอฟเก็บไฟล์ไว้
+        model = joblib.load('fake_news_rf_model.pkl')
+        vectorizer = joblib.load('tfidf_vectorizer.pkl')
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # 4. แปลงข้อความและให้ AI ทำนายผล
+        X_new = vectorizer.transform([input_text])
+        prediction = model.predict(X_new)[0]
+        
+        # ดึงค่าความมั่นใจ (Accuracy/Confidence) ของ AI
+        probability = model.predict_proba(X_new)[0]
+        confidence = max(probability) * 100
 
-print("🧠 กำลังเทรนโมเดล Random Forest...")
-model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-model.fit(X_train, y_train)
+        # 5. จัดรูปแบบผลลัพธ์
+        # (สมมติว่า label '1' คือข่าวปลอม และ '0' คือข่าวจริง ปรับได้ตาม Dataset ของคุณเอฟครับ)
+        is_fake = bool(prediction == 1) 
+        
+        result = {
+            "isFake": is_fake,
+            "confidence": round(confidence, 2)
+        }
 
-predictions = model.predict(X_test)
-accuracy = accuracy_score(y_test, predictions)
-print(f"✅ เทรนเสร็จสิ้น! ความแม่นยำของโมเดล (Accuracy): {accuracy * 100:.2f}%")
+        # 6. ส่งกลับเป็น JSON (สำคัญมาก: ห้าม print ข้อความอื่นเด็ดขาด!)
+        print(json.dumps(result))
 
-joblib.dump(model, 'fake_news_rf_model.pkl')
-joblib.dump(vectorizer, 'tfidf_vectorizer.pkl')
-print("💾 บันทึกไฟล์โมเดลเสร็จสมบูรณ์!")
-print("📌 พร้อมนำไฟล์ .pkl ทั้ง 2 ไฟล์ไปวางทับในโฟลเดอร์ fake-news-backend/models/ แล้วครับ")
+    except Exception as e:
+        # ถ้ามี Error ให้ส่ง Error กลับไปแบบ JSON หน้าเว็บจะได้ไม่พัง
+        error_result = {"error": str(e)}
+        print(json.dumps(error_result))
+
+if __name__ == "__main__":
+    main()

@@ -1,8 +1,7 @@
-// ไฟล์: frontend/src/App.jsx
 import React, { useState, useEffect } from 'react'; 
 import { supabase } from './lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import UserProfileModal from './components/UserProfileModal'; 
+import UserProfileModal from './components/UserProfileModal'; // 🌟 Import Component
 
 function App() {
   const [inputText, setInputText] = useState('');
@@ -12,47 +11,33 @@ function App() {
   const [history, setHistory] = useState([]);
   const [metrics, setMetrics] = useState([]); 
 
-  // --- States สำหรับระบบ UI ---
+  // --- States สำหรับ Requirement ใหม่ ---
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [colorBlindMode, setColorBlindMode] = useState('normal'); 
-
-  // --- States สำหรับระบบ User และ Profile Modal ---
+  
+  // 🌟 States สำหรับ User & Modal
   const [user, setUser] = useState(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const tiffanyBlue = '#0ABAB5';
 
   // สี Dynamic สำหรับกราฟและผลลัพธ์ (รองรับคนตาบอดสี)
   const getStatusColors = () => {
     switch(colorBlindMode) {
-      case 'deuteranomaly': return { fake: '#EAB308', real: '#3B82F6' }; 
-      case 'tritanopia': return { fake: '#EF4444', real: '#14B8A6' }; 
-      default: return { fake: '#EF4444', real: '#22C55E' }; 
+      case 'deuteranomaly': return { fake: '#EAB308', real: '#3B82F6' }; // เหลือง / น้ำเงิน
+      case 'tritanopia': return { fake: '#EF4444', real: '#14B8A6' }; // แดง / เขียวอมฟ้า
+      default: return { fake: '#EF4444', real: '#22C55E' }; // แดง / เขียว (ปกติ)
     }
   };
 
   const statusColors = getStatusColors();
 
-  // --- ดึงข้อมูล User จาก Supabase ---
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if(!session?.user) setIsProfileModalOpen(false); 
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const refreshUser = async () => {
+  // 🌟 ฟังก์ชันเช็คสถานะการล็อกอิน
+  const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
   };
 
-  // --- ดึงข้อมูลสถิติและประวัติ ---
   const fetchHistory = async () => {
     const { data, error } = await supabase
       .from('news_scans')
@@ -73,11 +58,11 @@ function App() {
   };
 
   useEffect(() => {
+    checkUser(); // ดึงข้อมูล User ตอนเปิดเว็บ
     fetchHistory();
     fetchMetrics(); 
   }, []);
 
-  // --- ฟังก์ชันสแกนข่าว ---
   const handleScan = async () => {
     if (!inputText.trim()) return alert('กรุณาใส่ข้อความก่อนตรวจสอบครับ!');
     setIsScanning(true);
@@ -126,19 +111,12 @@ function App() {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${bgMain} ${textMain} p-8`}>
       
-      {/* 🌟 Modal โปรไฟล์ผู้ใช้ (จัดการ Login / เปลี่ยนรูป) */}
-      <UserProfileModal 
-        isOpen={isProfileModalOpen} 
-        onClose={() => setIsProfileModalOpen(false)} 
-        user={user}
-        onUserUpdate={refreshUser}
-        isDarkMode={isDarkMode}
-      />
-
+      {/* 🌟 NavBar พร้อมเมนูตั้งค่า */}
       <nav className="max-w-6xl mx-auto flex justify-between items-center mb-10">
         <h1 className="text-2xl font-bold" style={{ color: tiffanyBlue }}>FakeNewsDetector</h1>
         
         <div className="flex items-center gap-4">
+          {/* เมนูคนตาบอดสี */}
           <select 
             value={colorBlindMode}
             onChange={(e) => setColorBlindMode(e.target.value)}
@@ -149,6 +127,7 @@ function App() {
             <option value="tritanopia">👁️ บอดสีน้ำเงิน-เหลือง</option>
           </select>
 
+          {/* ปุ่มสลับธีม */}
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
             className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-600'}`}
@@ -156,25 +135,23 @@ function App() {
             {isDarkMode ? '🌙' : '☀️'}
           </button>
 
-          {/* 🌟 ปุ่มเปิด Modal Profile */}
-          {user ? (
-            <button onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img 
-                src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}&background=0ABAB5&color=fff`} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full border-2 object-cover" 
-                style={{ borderColor: tiffanyBlue }} 
-              />
-            </button>
-          ) : (
-            <button 
-              onClick={() => setIsProfileModalOpen(true)} 
-              className="px-4 py-2 rounded-full text-sm font-medium text-white transition-opacity hover:opacity-90 shadow-sm"
-              style={{ backgroundColor: tiffanyBlue }}
-            >
-              เข้าสู่ระบบ
-            </button>
-          )}
+          {/* 🌟 ปุ่ม User Profile / Login (เปิด Modal) */}
+          <button 
+            onClick={() => setIsProfileOpen(true)} 
+            className="px-4 py-2 rounded-full text-sm font-medium text-white transition-opacity hover:opacity-90 flex items-center gap-2 shadow-sm"
+            style={{ backgroundColor: tiffanyBlue }}
+          >
+            {user ? (
+              <>
+                <img 
+                  src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}&background=0ABAB5&color=fff`} 
+                  alt="Profile" 
+                  className="w-6 h-6 rounded-full border border-white object-cover bg-white" 
+                />
+                โปรไฟล์
+              </>
+            ) : 'เข้าสู่ระบบ'}
+          </button>
         </div>
       </nav>
 
@@ -228,10 +205,13 @@ function App() {
 
         {/* คอลัมน์ขวา */}
         <div className="md:col-span-5 space-y-6">
+          
+          {/* สถิติความแม่นยำของโมเดล AI */}
           <div className={`${bgCard} p-6 rounded-xl shadow-sm border h-80 flex flex-col`}>
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               📊 สถิติความแม่นยำของโมเดล AI
             </h3>
+            
             {metrics.length === 0 ? (
               <div className="flex-1 w-full animate-pulse flex flex-col justify-end gap-3 mt-4">
                 {[...Array(3)].map((_, i) => (
@@ -256,10 +236,12 @@ function App() {
             )}
           </div>
 
+          {/* ประวัติการตรวจสอบล่าสุด */}
           <div className={`${bgCard} p-6 rounded-xl shadow-sm border`}>
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               🕒 ประวัติการตรวจสอบล่าสุด
             </h3>
+
             {history.length === 0 ? (
               <p className="opacity-50 text-center py-4">ยังไม่มีประวัติการตรวจสอบ</p>
             ) : (
@@ -280,8 +262,18 @@ function App() {
               </div>
             )}
           </div>
+
         </div>
       </main>
+
+      {/* 🌟 แสดง Modal เมื่อ isProfileOpen เป็น true */}
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        user={user} 
+        onUserUpdate={checkUser} 
+        isDarkMode={isDarkMode} 
+      />
     </div>
   );
 }

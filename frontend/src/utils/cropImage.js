@@ -1,12 +1,15 @@
 // ไฟล์: frontend/src/utils/cropImage.js
-export const getCroppedImg = async (imageSrc, pixelCrop) => {
-  const image = new Image();
-  image.src = imageSrc;
-  
-  await new Promise((resolve) => {
-    image.onload = resolve;
+export const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous');
+    image.src = url;
   });
 
+export async function getCroppedImg(imageSrc, pixelCrop) {
+  const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -25,9 +28,13 @@ export const getCroppedImg = async (imageSrc, pixelCrop) => {
     pixelCrop.height
   );
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('Canvas is empty'));
+        return;
+      }
       resolve(blob);
     }, 'image/jpeg');
   });
-};
+}

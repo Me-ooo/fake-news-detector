@@ -59,7 +59,8 @@ function App() {
       
       if (data.error) throw new Error(data.error);
       
-      aiScore = data.score;
+      // 🌟 จุดที่แก้ไข: เปลี่ยนจาก data.score เป็น data.confidence เพื่อให้รับค่า % จาก AI ได้ถูกต้อง
+      aiScore = data.confidence; 
       aiIsFake = data.isFake;
       
     } catch (error) {
@@ -101,7 +102,7 @@ function App() {
             <h2 className="text-lg font-semibold mb-4">ตรวจสอบข้อความ / ข่าวสาร</h2>
             <textarea
               className="w-full h-40 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none mb-4"
-              placeholder="วางข้อความข่าว หรือ URL ที่คุณสงสัยที่นี่..."
+              placeholder="วางเนื้อหาข่าว หรือข้อความที่คุณสงสัยที่นี่..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
             ></textarea>
@@ -137,7 +138,7 @@ function App() {
         {/* คอลัมน์ขวา */}
         <div className="md:col-span-5 space-y-6">
           
-          {/* 🌟 ส่วนแสดงกราฟสถิติ (ใหม่) */}
+          {/* 🌟 ส่วนแสดงกราฟสถิติ */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-80">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               📊 สถิติความแม่นยำของโมเดล AI
@@ -152,7 +153,6 @@ function App() {
                   <BarChart data={metrics} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" domain={[0, 100]} />
-                    {/* กำหนดชื่อแนวตั้ง (แกน Y) จากฟิลด์ model_name */}
                     <YAxis dataKey="model_name" type="category" width={140} tick={{ fontSize: 12, fill: '#4b5563' }} />
                     <Tooltip formatter={(value) => [`${value}%`, 'ความแม่นยำ']} />
                     <Bar dataKey="accuracy_percentage" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
